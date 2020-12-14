@@ -1,0 +1,155 @@
+---
+title: "Capstone EDA"
+author: "Ahmed ALRashid"
+date: "12/6/2020"
+output: html_document
+---
+
+## Loading packages 
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(DT)
+library(ggplot2)
+library(Hmisc)
+library(RColorBrewer)
+library(munsell)
+library(janitor)
+```
+
+
+# Loading data set
+```{r}
+
+inventory <- read_csv("POs LI 20100419 .csv")
+inventory <- clean_names(inventory) # clean the names in the data set
+inventory <- subset( inventory, select = -x12 ) # To remove unnecessary column 
+
+```
+
+PO Document = Purchase Order document is a legal document awarded to a supplier/ vendor to supply materials for the a company.  طلب شراء
+
+PO Item = Purchase Order Item. A purchase order may have one or more line items.  بند
+
+Changed On = PO issued or changed
+
+Short Text = short description of an item. وصف البند
+
+Material No = the item catalog number in the company.
+
+Company = the company the PO issued. Do not use ....
+
+Location = the location where the materials will be delivered.
+
+Material/Svcs group = Another scheme numbering system used to organize materials in the catalog.  A Material/Svcs group will have many Materials number.
+
+PO Quantity = Purchase Order item quantity
+
+Order Price Un. = PO Item unit price
+
+Unit Price = the unit price of the line item.
+
+Total LI Value = Total line item price سعر طلب الشراء
+
+
+
+
+
+```{r}
+
+summary(inventory)
+
+```
+
+
+
+
+```{r}
+# Conver currency to a numberic
+inventory$unit_price <- as.numeric(gsub('[$,]', '', inventory$unit_price))
+inventory$total_li_value <- as.numeric(gsub('[$,]', '', inventory$total_li_value))
+```
+
+```{r}
+# Changed dates formate to Date so we can use it for our time series analysis
+inventory$changed_on <- as.Date(inventory$changed_on,
+                                format = "%m/%d/%Y")
+typeof(inventory$changed_on)
+
+```
+
+
+
+```{r}
+glimpse(inventory)
+```
+
+```{r}
+
+big_sellers <- inventory %>% 
+  group_by(short_text) %>% 
+  summarise(n = n()) %>% 
+  top_n(10, n)
+
+ggplot(inventory[inventory$short_text %in% big_sellers$short_text,], aes(changed_on, short_text)) +
+  geom_point()
+```
+
+
+```{r}
+sum(is.na(inventory))
+```
+
+
+```{r}
+
+sample_i <- inventory[sample(nrow(inventory), 1000), ]
+
+```
+
+```{r}
+
+ggplot(sample_i, aes(sample_i$po_document, sample_i$po_quantity)) +
+  geom_point(shape = 16, alpha = 0.6,
+             size = 3, color = "blue")
+```
+
+```{r}
+
+in_top10 <- inventory %>% 
+  summarise(inventory, po_quantity) %>% 
+  top_n(10)
+datatable(in_top10)  
+  
+```
+
+
+```{r}
+
+ggplot(sample_i , aes(po_quantity, location)) +
+  geom_point(shape = 5, color = "red")
+
+```
+
+```{r}
+plot(inventory, aes(inventory$material_no, inventory$po_quantity))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
