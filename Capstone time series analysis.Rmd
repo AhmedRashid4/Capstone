@@ -1,0 +1,108 @@
+---
+title: "Capstone series analysis"
+author: "Ahmed ALRashid"
+date: "12/14/2020"
+output: html_document
+---
+
+## Loading packages 
+
+```{r setup, include=FALSE}
+
+library(tidyverse)
+library(janitor)
+library(forecast)
+library(zoo)
+library(xts)
+library(lubridate)
+library(tidymodels)
+library(modeltime)
+library(timetk)  
+
+```
+
+# Loading data set
+```{r}
+
+inventory <- read_csv("POs LI 20100419 .csv")
+inventory <- clean_names(inventory) # clean the names in the data set
+inventory <- subset( inventory, select = -x12 ) # To remove unnecessary column 
+
+```
+
+# Convert currency to a numberic
+```{r}
+
+inventory$unit_price <- as.numeric(gsub('[$,]', '', inventory$unit_price))
+inventory$total_li_value <- as.numeric(gsub('[$,]', '', inventory$total_li_value))
+glimpse(inventory)
+
+```
+
+
+# find out if the po_document or the material_no is unique 
+```{r}
+
+length(unique(inventory$po_document))
+  
+
+length(unique(inventory$material_no))
+
+```
+# as you can see, both po_document and the material_no is not unique because there lenghs are much shorter than the data set
+
+
+# Adding columns for day, month, year into the data set
+```{r}
+# I thought I was going to need it for time series 
+inventory$day <- format(as.Date(inventory$changed_on), "%d")
+inventory$month <- format(as.Date(inventory$changed_on), "%m")
+inventory$year <- format(as.Date(inventory$changed_on), "%Y")
+```
+
+# adding po_document, po_item and material_no together
+```{r}
+
+inventory$po_id <-  paste0(inventory$po_document, inventory$po_item, inventory$material_no)
+inventory$po_id <-as.numeric(inventory$po_id)
+
+```
+
+```{r}
+
+# cheack for NAs 
+sum(is.na(inventory))
+
+# Delete all rows with NA values
+inventory <-  na.omit(inventory)
+
+
+```
+
+
+#simplify the data set to a univariate time series with columns, “date” and “value”.
+```{r}
+
+inventory <- inventory %>% 
+  select(changed_on, po_id) %>%
+    set_names(c("date", "value")) 
+
+glimpse(inventory)
+```
+
+
+```{r}
+
+# sorting the data by date
+inventory[order(as.Date(inventory$date, format="%Y-%m-%d")),]
+
+```
+
+
+```{r}
+
+#plot the data
+#inventory %>%
+ # plot_time_series(date, value, .interactive = FALSE)
+```
+
